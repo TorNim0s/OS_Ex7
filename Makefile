@@ -8,3 +8,4 @@ test.o : test.c fs.h
 
 fs.o : fs.c fs.h
 	gcc -c fs.c
+
