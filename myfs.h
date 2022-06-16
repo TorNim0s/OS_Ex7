@@ -62,3 +62,7 @@ int myopendir(const char *name); // open a directory
 struct mydirent *myreaddir(int dirp); // read a directory
 int myclosedir(int myfd); // close a directory
 
+extern struct superblock sb;
+extern struct inode *inodes;
+extern struct disk_block *dbs;
+extern struct opened opened[MAX_FILES];
