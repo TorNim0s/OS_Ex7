@@ -49,28 +49,3 @@ int myfseek(myFILE *stream, long offset, int whence){
     mylseek(stream->file_descriptor, offset, whence);
     return 0;
 }
-
-int myfscanf(myFILE *stream, const char * format, ...){
-    va_list arguments;
-    /* Initializing arguments to store all values after num */
-    va_start ( arguments, format );
-    int len = strlen(format);
-    int newPos = 0;
-    for (size_t i = 0; i < len-1; i++)
-    {
-        if (format[i] == '%')
-        {
-            if (format[i+1] == 'd')
-            {
-                myfread(va_arg(arguments,void *), 1,sizeof(int),stream);
-                newPos++;
-            }
-            if (format[i+1] == 'c')
-            {
-                myfread(va_arg(arguments,void *), 1,sizeof(char),stream);
-                newPos++;
-            }
-        }
-    }
-    return newPos;
-}
