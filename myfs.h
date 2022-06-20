@@ -41,13 +41,10 @@ void sync_fs(const char* target);   // write the file system
 void sync_again(const char * target);
 
 int allocate_file(const char * name, int size); //return filenumber
-void set_filesize(int filenum, int size);
-void write_byte(int filenum, int pos, char * data);
+void set_filesize(int filenum, int size);void write_byte(int filenum, int pos, char * data);
 char read_byte(int filenum, int pos);
 
 int get_block_num(int file, int offset);
-void shorten_file(int bn);
-void print_fs(); // print out info about the filesystem
 int create_file(const char * path, const char* name); // create a file in a path
 int create_dir(const char * path, const char* name); // create a directory in a path
 

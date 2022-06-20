@@ -5,7 +5,7 @@ struct inode *inodes;
 struct disk_block *dbs;
 struct opened opened[MAX_FILES];
 
-int find_empty_inode()
+int find_empty_inode() //from video
 {
     int i;
     for (i = 0; i < sb.num_inodes; i++)
@@ -18,7 +18,7 @@ int find_empty_inode()
     return -1;
 } // find empty inode
 
-int find_empty_block()
+int find_empty_block() //from video
 {
     int i;
     for (i = 0; i < sb.num_blocks; i++)
@@ -31,17 +31,7 @@ int find_empty_block()
     return -1;
 } // find empty block
 
-void shorten_file(int bn)
-{
-    int nn = dbs[bn].next_block_num;
-    if (nn >= 0)
-    {
-        shorten_file(nn);
-    }
-    dbs[bn].next_block_num = -1;
-} // shorten_file
-
-int get_block_num(int file, int offset)
+int get_block_num(int file, int offset) //from video
 {
     int togo = offset;
     int bn = inodes[file].first_block;
@@ -54,7 +44,7 @@ int get_block_num(int file, int offset)
 } // get_block_num
 
 // write the file system
-void sync_fs(const char *target)
+void sync_fs(const char *target) //from video was called mount_fs
 {
     FILE *file;
     file = fopen(target, "w+");
@@ -76,7 +66,7 @@ void sync_fs(const char *target)
     fclose(file);
 }
 
-void sync_again(const char *target)
+void sync_again(const char *target) //same from video fun but for reading (mount_fs)
 {
     FILE *file;
     file = fopen(target, "w+");
@@ -85,37 +75,21 @@ void sync_again(const char *target)
         printf("Error: could not open file \n");
         return;
     }
+    // superblock
     fread(&sb, sizeof(struct superblock), 1, file);
+
+    // inodes
     inodes = malloc(sizeof(struct inode) * sb.num_inodes);
-    dbs = malloc(sizeof(struct disk_block) * sb.num_blocks);
     fread(inodes, sizeof(struct inode), sb.num_inodes, file);
+
+    // disk blocks
+    dbs = malloc(sizeof(struct disk_block) * sb.num_blocks);
     fread(dbs, sizeof(struct disk_block), sb.num_blocks, file);
+
     fclose(file);
 }
 
-// print out info about the filesystem
-void print_fs()
-{
-    printf("superblock info:\n");
-    printf("\tnum inodes %d\n", sb.num_inodes);
-    printf("\tnum blocks %d\n", sb.num_blocks);
-    printf("\tsize blocks %d\n", sb.size_blocks);
-
-    printf("inodes:\n");
-    int i;
-    for (i = 0; i < sb.num_inodes; i++)
-    {
-        printf("\tsize: %d block: %d name: %s\n", inodes[i].size, inodes[i].first_block, inodes[i].name);
-    }
-
-    for (i = 0; i < sb.num_blocks; i++)
-    {
-        printf("\tblock num: %d next block: %d\n", i, dbs[i].next_block_num);
-    }
-
-} // print_fs
-
-int allocate_file(const char *name, int size)
+int allocate_file(const char *name, int size) //from video
 {
     // find an empty inode
     int in = find_empty_inode();
@@ -153,9 +127,9 @@ int create_file(const char *path, const char *name)
     }
     int dirfd = myopendir(path);
     struct mydirent *dir = myreaddir(dirfd);
-    dir->fds[dir->size++] = fd;
-    opened[fd].fd = fd;
     opened[fd].pos = 0;
+    opened[fd].fd = fd;
+    dir->fds[dir->size++] = fd;
     return fd;
 }
 
@@ -193,37 +167,7 @@ int create_dir(const char *path, const char *name)
     return fd2;
 }
 
-// add / delete blocks
-void set_filesize(int filenum, int size)
-{
-    // how many blocks should we have
-    int tmp = size + BLOCKSIZE - 1;
-    int num = tmp / BLOCKSIZE;
-
-    int bn = inodes[filenum].first_block;
-    num--;
-    // grow the file if necessary
-    while (num > 0)
-    {
-        // check next block number
-        int next_num = dbs[bn].next_block_num;
-        if (next_num == -2)
-        {
-            int empty = find_empty_block();
-            dbs[bn].next_block_num = empty;
-            dbs[empty].next_block_num = -2;
-        }
-        bn = dbs[bn].next_block_num;
-        num--;
-    }
-
-    // shorten if necessary
-    shorten_file(bn);
-    dbs[bn].next_block_num = -2;
-
-} // set_filesize
-
-void write_byte(int filenum, int pos, char *data)
+void write_byte(int filenum, int pos, char *data) // from video
 {
     // calculate which block
     int relative_block = pos / BLOCKSIZE;
@@ -235,7 +179,7 @@ void write_byte(int filenum, int pos, char *data)
     dbs[bn].data[offset] = (*data);
 } // write_byte
 
-char read_byte(int filenum, int pos)
+char read_byte(int filenum, int pos) // recreating from write_byte fun
 {
     int block = inodes[filenum].first_block;
     while (pos > BLOCKSIZE)
@@ -250,7 +194,7 @@ char read_byte(int filenum, int pos)
     return dbs[block].data[pos];
 } // read_byte
 
-void mymkfs(int size)
+void mymkfs(int size) // from video fun called create_fs with adaptation to our filesystem
 {
     int no_superblock = size - sizeof(struct superblock);
     int indode_size = no_superblock / 10;
@@ -318,10 +262,10 @@ int myopen(const char *pathname, int flags)
         printf("Error: path cannot be NULL\n");
         return -1;
     }
-    char path[100];
-    strcpy(path, pathname);
     char *str;
     const char slash[2] = "/";
+    char path[100];
+    strcpy(path, pathname);  
     str = strtok(path, slash);
     char this_path[10] = "";
     char prev_path[10] = "";
@@ -340,14 +284,11 @@ int myopen(const char *pathname, int flags)
                 printf("Error: this is a directory\n");
                 return -1;
             }
-            opened[i].fd = i;
             opened[i].pos = 0;
+            opened[i].fd = i;
             return i;
         }
     }
-    // if (flags != O_CREAT) {
-    //     return -1;
-    // }
     int newfd = create_file(prev_path, this_path);
     opened[newfd].fd = newfd;
     opened[newfd].pos = 0;
@@ -402,8 +343,7 @@ size_t mywrite(int myfd, const void *buf, size_t count)
         printf("Error: invalid file descriptor in mywrite\n");
         return -1;
     }
-    char *buff = (char *)buf;
-    write_byte(myfd, opened[myfd].pos, buff);
+    write_byte(myfd, opened[myfd].pos, (char *)buf);
     opened[myfd].pos += count;
     return opened[myfd].pos;
 }
@@ -442,10 +382,10 @@ off_t mylseek(int myfd, off_t offset, int whence)
 
 int myopendir(const char *name)
 {
-    char path[100];
-    strcpy(path, name);
     char *str;
     const char slash[2] = "/";
+    char path[100];
+    strcpy(path, name);
     str = strtok(path, slash);
     char this_path[10] = "";
     char prev_path[10] = "";
